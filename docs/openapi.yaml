@@ -1,0 +1,342 @@
+openapi: 3.0.1
+info:
+  title: Task Tracker API
+  description: |
+    ### Testing Flow:
+    1. **Authentication**: Use Signup/Login to get a token.
+    2. **Authorize**: Click the "Authorize" button and enter the token.
+    3. **Projects**: Create a Project first (Tasks require a Project ID).
+    4. **Tasks**: Create tasks within your projects.
+    5. **Categories**: Create labels and link them to tasks.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: "1. Authentication"
+    description: "Start here to create an account and get a JWT token."
+  - name: "2. Projects"
+    description: "Manage project folders. You must create a project before adding tasks."
+  - name: "3. Tasks"
+    description: "Manage individual to-do items within your projects."
+  - name: "4. Categories"
+    description: "Create and manage labels (e.g., 'Urgent', 'Home')."
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        username: { type: string }
+    Project:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        userId: { type: integer }
+    Task:
+      type: object
+      properties:
+        id: { type: integer }
+        description: { type: string }
+        is_completed: { type: boolean }
+        projectId: { type: integer }
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+
+paths:
+  /api/auth/signup:
+    post:
+      tags: ["1. Authentication"]
+      summary: Step 1 - Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "andres@uncc.edu" }
+                password: { type: string, example: "password123" }
+                username: { type: string, example: "aramirez" }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              example: { "id": 1, "email": "andres@uncc.edu" }
+        '400':
+          description: Missing email or password
+        '409':
+          description: Email already exists
+
+  /api/auth/login:
+    post:
+      tags: ["1. Authentication"]
+      summary: Step 2 - Login to get a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "andres@uncc.edu" }
+                password: { type: string, example: "password123" }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              example: { "token": "YOUR_JWT_TOKEN_HERE" }
+        '401':
+          description: Invalid email or password
+        '400':
+          description: Valid email is required
+
+  /api/projects:
+    get:
+      tags: ["2. Projects"]
+      summary: View all your projects
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+    post:
+      tags: ["2. Projects"]
+      summary: Create a Project (Required before Tasks)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, example: "School Work" }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Missing title
+        '401':
+          description: User is not logged in
+
+  /api/projects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: ["2. Projects"]
+      summary: Get details for one project
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: The provided ID is not a valid positive integer.
+        '401':
+          description: User is not logged in
+        '404':
+          description: Project not found
+    put:
+      tags: ["2. Projects"]
+      summary: Change project title
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, example: "New Title" }
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: User is not logged in
+        '404':
+          description: Project not found
+        '403':
+          description: User does not own this project
+    delete:
+      tags: ["2. Projects"]
+      summary: Delete a project
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Deleted successfully
+        '401':
+          description: User is not logged in
+        '404':
+          description: Project not found
+        '403':
+          description: User does not own this project
+
+  /api/tasks:
+    get:
+      tags: ["3. Tasks"]
+      summary: View all tasks
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: User is not logged in
+    post:
+      tags: ["3. Tasks"]
+      summary: Create a new Task
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string, example: "Finish Project" }
+                projectId: { type: integer, example: 1 }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Missing description
+        '401':
+          description: User is not logged in
+
+  /api/tasks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    put:
+      tags: ["3. Tasks"]
+      summary: Update task status
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_completed: { type: boolean, example: true }
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Task not found
+        '401':
+          description: User is not logged in
+
+    delete:
+      tags: ["3. Tasks"]
+      summary: Delete a task
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Deleted successfully
+        '400':
+          description: The provided ID is not a valid positive integer.
+        '404':
+          description: Task not found
+        '401':
+          description: User is not logged in
+        '403':
+          description: User does not own this task
+
+  /api/tasks/{id}/categories:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    post:
+      tags: ["3. Tasks"]
+      summary: Link a label to a task
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categoryId: { type: integer, example: 1 }
+      responses:
+        '200':
+          description: Linked successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Task or Category not found
+
+  /api/categories:
+    get:
+      tags: ["4. Categories"]
+      summary: View all labels
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: User is not logged in
+    post:
+      tags: ["4. Categories"]
+      summary: Create a new label
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: "Urgent" }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Missing name
+        '401':
+          description: User is not logged in
+
+  /api/categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    delete:
+      tags: ["4. Categories"]
+      summary: Delete a label
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Deleted successfully
+        '400':
+          description: The provided ID is not a valid positive integer.
+        '404':
+          description: Category not found
+        '401':
+          description: User is not logged in
+        '403':
+          description: User does not own this category
