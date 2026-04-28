@@ -30,7 +30,7 @@ if(specs){
 app.use('/api-docs',swaggerUI.serve, swaggerUI.setup(specs));
 }
 
-app.length('/health', (req,res) => {
+app.get('/health', (req,res) => {
     res.status(200).json({status: 'OK'});
 });
 
