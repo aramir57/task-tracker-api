@@ -5,7 +5,7 @@ export async function listCategories(){
 }
 
 export async function getCategoryById(id){
-    const category = await repo.getById(id);
+    const category = await repo.getById(parseInt(id));
     if(!category){
         const error = new Error('Category does not exist');
         error.status=404;

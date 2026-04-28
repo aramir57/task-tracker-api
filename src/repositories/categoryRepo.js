@@ -12,7 +12,10 @@ export async function getById(id){
 
 export async function create(data){
     return await prisma.category.create({
-        data: data
+        data:{
+            name: data.name,
+            userId: data.userId
+        }
     });
 }
 
