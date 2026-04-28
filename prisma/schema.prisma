@@ -18,6 +18,7 @@ model User {
   email    String    @unique
   password String
   projects Project[]
+  categories Category[]
 }
 
 model Project {
@@ -29,7 +30,9 @@ model Project {
 }
 model Category{
   id  Int @id @default(autoincrement())
-  name String @unique 
+  name String @unique
+  userId Int
+  user User @relation(fields: [userId], references: [id]) 
   tasks Task[]
 }
 

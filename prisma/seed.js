@@ -51,9 +51,9 @@ const user2 = await prisma.user.create({
 
 await prisma.category.createMany({
     data: [
-        { name: 'Urgent' },
-        { name: 'Important' },
-        { name: 'Normal' }
+        { name: 'Urgent', userId: user1.id },
+        { name: 'Important', userId: user1.id },
+        { name: 'Normal', userId: user2.id }
     ]
 });
 
