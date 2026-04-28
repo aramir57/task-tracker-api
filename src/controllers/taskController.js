@@ -7,6 +7,8 @@ import{
     linkCategory,
 } from '../services/taskService.js';
 
+import { getProjectByIdRepo } from '../repositories/projectRepo.js';
+
 export async function getAllTasksHandler(req,res,next){
     try{
         const projectIds = req.query.projectId;
@@ -23,6 +25,12 @@ export async function getAllTasksHandler(req,res,next){
         }
 
         const project = await getProjectByIdRepo(projectId);
+
+        if(!project){
+            const err = new Error('Project not found');
+            err.status =404;
+            throw err;
+        }
         if(project.userId !== req.user.id){
             const err = new Error('Forbidden: You do not own this project');
             err.status =403;
